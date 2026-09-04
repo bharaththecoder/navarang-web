@@ -1,26 +1,61 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --font-jakarta: 'Plus Jakarta Sans', system-ui, sans-serif;
+    --font-outfit: 'Outfit', sans-serif;
+    --color-culinary-bg: #F4F1EA;
+    --color-culinary-surface: #FAF8F5;
+    --color-culinary-crimson: #7C1818;
+    --color-culinary-text: #1F1A17;
   }
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-jakarta), system-ui, -apple-system, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  background-color: #F4F1EA;
+  color: #1F1A17;
+}
+
+h1, h2, h3, h4, .font-heading {
+  font-family: var(--font-outfit), var(--font-jakarta), sans-serif;
+}
+
+/* Luxury Card Shadow & Elevation */
+.shadow-culinary {
+  box-shadow: 0 10px 30px -10px rgba(31, 26, 23, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
+}
+
+.shadow-culinary-hover {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.shadow-culinary-hover:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 20px 35px -10px rgba(124, 24, 24, 0.12), 0 8px 16px -4px rgba(31, 26, 23, 0.04);
+}
+
+/* Floating Capsule Blur */
+.glass-capsule {
+  background: rgba(253, 252, 251, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(226, 222, 214, 0.85);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #EAE6DE;
+}
+::-webkit-scrollbar-thumb {
+  background: #C7C0B2;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #A69E8F;
 }
