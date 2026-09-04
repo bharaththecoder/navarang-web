@@ -21,6 +21,7 @@ interface AuthContextType {
   setIsAuthModalOpen: (open: boolean) => void;
   sendOtp: (phone: string) => Promise<{ success: boolean; error?: string }>;
   verifyOtp: (phone: string, token: string) => Promise<{ success: boolean; error?: string }>;
+  signInWithGoogle: () => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
   updateProfile: (data: Partial<UserProfile>) => Promise<boolean>;
 }
@@ -153,6 +154,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const signInWithGoogle = async (): Promise<{ success: boolean; error?: string }> => {
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/` : undefined,
+          },
+        });
+        if (error) return { success: false, error: error.message };
+        return { success: true };
+      } catch (err: unknown) {
+        return { success: false, error: err instanceof Error ? err.message : 'Google sign-in failed' };
+      }
+    } else {
+      const mockProfile: UserProfile = {
+        id: 'google_user_demo',
+        phone: '+91 9876543210',
+        fullName: 'Google Customer',
+      };
+      setProfile(mockProfile);
+      setUser({ id: 'google_user_demo' } as unknown as User);
+      localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(mockProfile));
+      return { success: true };
+    }
+  };
+
   const signOut = async () => {
     if (isSupabaseConfigured && supabase) {
       await supabase.auth.signOut();
@@ -185,6 +213,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsAuthModalOpen,
         sendOtp,
         verifyOtp,
+        signInWithGoogle,
         signOut,
         updateProfile,
       }}
