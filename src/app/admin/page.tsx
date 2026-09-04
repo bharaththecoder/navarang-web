@@ -129,7 +129,7 @@ export default function AdminDashboardPage() {
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <label className="text-xs font-heading font-bold text-stone-700">
-                Enter Shopkeeper PIN (Default: 1234)
+                Enter Shopkeeper PIN
               </label>
               <input
                 type="password"

@@ -192,8 +192,8 @@ export default function CartDrawer() {
                 {!isAuthenticated && (
                   <div className="p-3.5 rounded-2xl bg-white border border-stone-200/90 flex items-center justify-between gap-3 text-xs shadow-2xs">
                     <div>
-                      <span className="font-heading font-bold text-stone-900 block">Sign In for Fast Checkout</span>
-                      <span className="text-[11px] text-stone-500">Auto-fill delivery address via Google or Mobile Number</span>
+                      <span className="font-heading font-bold text-stone-900 block">Sign In with Google</span>
+                      <span className="text-[11px] text-stone-500">Auto-fill your delivery details and order history</span>
                     </div>
                     <button
                       type="button"
