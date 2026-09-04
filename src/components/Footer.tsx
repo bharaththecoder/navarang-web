@@ -23,7 +23,7 @@ export default function Footer() {
               </span>
             </div>
             <p className="text-xs text-stone-400 leading-relaxed">
-              Madhuranagar&apos;s trusted fresh meat center in Vijayawada. Supplying 100% Halal tender mutton, farm chicken, and village Natu Kodi cut freshly on order.
+              Madhuranagar&apos;s trusted fresh meat center in Vijayawada. Supplying 100% Halal tender goat mutton, fresh farm chicken, and special liver &amp; paya cuts, freshly slaughtered and cleaned on order.
             </p>
             <div className="flex items-center gap-2 pt-1">
               <span className="text-[10px] font-heading font-bold px-2.5 py-1 rounded-full bg-[#7C1818]/40 text-amber-200 border border-[#7C1818]/60">

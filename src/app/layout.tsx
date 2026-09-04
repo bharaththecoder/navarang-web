@@ -20,14 +20,14 @@ const outfit = Outfit({
 export const metadata: Metadata = {
   title: 'Navarang Mutton & Chicken Center | Fresh Meat Online Delivery in Vijayawada',
   description:
-    'Order 100% Halal fresh tender goat mutton, broiler chicken, and authentic Natu Kodi online in Vijayawada. Express 45-min doorstep delivery in Madhuranagar & surrounding areas. Direct UPI payments.',
+    'Order 100% Halal fresh tender goat mutton, broiler chicken, and fresh liver & paya online in Vijayawada. Express 30-45 min doorstep delivery in Madhuranagar & surrounding areas. Direct UPI payments.',
   keywords: [
     'Navarang Mutton & Chicken',
     'Vijayawada meat delivery',
     'fresh mutton online Vijayawada',
     'fresh chicken Madhuranagar',
-    'Natu Kodi delivery Vijayawada',
     'Halal butcher shop Vijayawada',
+    'tender goat mutton Vijayawada',
   ],
   authors: [{ name: 'Navarang Mutton & Chicken Center' }],
   openGraph: {
