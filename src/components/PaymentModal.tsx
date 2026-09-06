@@ -64,15 +64,18 @@ export default function PaymentModal({
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-stone-900/65 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-[#FDFCFB] border border-stone-200 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl text-stone-900 flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-stone-900/65 backdrop-blur-xs animate-in fade-in duration-200">
+      <div className="bg-[#FDFCFB] border-t sm:border border-stone-200 rounded-t-3xl sm:rounded-3xl w-full max-w-md overflow-hidden shadow-2xl text-stone-900 flex flex-col max-h-[94vh] pb-safe animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-200">
         
+        {/* Mobile Drag Indicator */}
+        <div className="w-12 h-1 bg-stone-300 rounded-full mx-auto mt-2 sm:hidden shrink-0" />
+
         {/* Header */}
-        <div className="bg-gradient-to-r from-[#8B1E1E] to-[#A32222] p-5 text-white text-center">
+        <div className="bg-gradient-to-r from-[#8B1E1E] to-[#A32222] p-4 sm:p-5 text-white text-center">
           <span className="text-[11px] font-heading font-extrabold uppercase tracking-wider bg-white/20 px-3 py-0.5 rounded-full inline-block">
             Order #{order.id}
           </span>
-          <h2 className="font-heading font-black text-xl sm:text-2xl mt-1.5">
+          <h2 className="font-heading font-black text-lg sm:text-2xl mt-1.5">
             {step === 'pay' ? 'Direct UPI Payment' : 'Order Placed Successfully!'}
           </h2>
           <p className="text-xs text-amber-100 mt-0.5">
@@ -83,15 +86,15 @@ export default function PaymentModal({
         </div>
 
         {/* Body */}
-        <div className="p-5 overflow-y-auto space-y-5">
+        <div className="p-4 sm:p-5 overflow-y-auto space-y-4 sm:space-y-5">
           {step === 'pay' ? (
             <>
               {/* Total Amount Box */}
-              <div className="bg-white p-4 rounded-2xl border border-stone-200 text-center shadow-xs">
+              <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-stone-200 text-center shadow-xs">
                 <span className="text-xs font-heading font-bold text-stone-500 uppercase tracking-wider">
                   Total Payable Amount
                 </span>
-                <div className="font-heading font-black text-3xl text-stone-900 mt-0.5">
+                <div className="font-heading font-black text-2xl sm:text-3xl text-stone-900 mt-0.5">
                   ₹{order.totalAmount}
                 </div>
                 <p className="text-xs text-emerald-700 font-semibold mt-1 flex items-center justify-center gap-1">
@@ -108,25 +111,25 @@ export default function PaymentModal({
                 <div className="grid grid-cols-2 gap-2">
                   <a
                     href={upiDeepLink}
-                    className="flex items-center justify-center gap-2 py-3 px-2 rounded-xl bg-white hover:bg-stone-50 border border-stone-300 text-stone-900 font-heading font-bold text-xs shadow-2xs transition"
+                    className="flex items-center justify-center gap-2 py-3 px-2 rounded-xl bg-white hover:bg-stone-50 border border-stone-300 text-stone-900 font-heading font-bold text-xs shadow-2xs transition active:scale-95"
                   >
                     Google Pay
                   </a>
                   <a
                     href={upiDeepLink}
-                    className="flex items-center justify-center gap-2 py-3 px-2 rounded-xl bg-purple-50 hover:bg-purple-100/70 border border-purple-200 text-purple-900 font-heading font-bold text-xs transition"
+                    className="flex items-center justify-center gap-2 py-3 px-2 rounded-xl bg-purple-50 hover:bg-purple-100/70 border border-purple-200 text-purple-900 font-heading font-bold text-xs transition active:scale-95"
                   >
                     PhonePe
                   </a>
                   <a
                     href={upiDeepLink}
-                    className="flex items-center justify-center gap-2 py-3 px-2 rounded-xl bg-sky-50 hover:bg-sky-100/70 border border-sky-200 text-sky-900 font-heading font-bold text-xs transition"
+                    className="flex items-center justify-center gap-2 py-3 px-2 rounded-xl bg-sky-50 hover:bg-sky-100/70 border border-sky-200 text-sky-900 font-heading font-bold text-xs transition active:scale-95"
                   >
                     Paytm UPI
                   </a>
                   <a
                     href={upiDeepLink}
-                    className="flex items-center justify-center gap-2 py-3 px-2 rounded-xl bg-amber-50 hover:bg-amber-100/70 border border-amber-200 text-amber-900 font-heading font-bold text-xs transition"
+                    className="flex items-center justify-center gap-2 py-3 px-2 rounded-xl bg-amber-50 hover:bg-amber-100/70 border border-amber-200 text-amber-900 font-heading font-bold text-xs transition active:scale-95"
                   >
                     BHIM / Any UPI
                   </a>
@@ -134,14 +137,14 @@ export default function PaymentModal({
               </div>
 
               {/* Desktop Dynamic QR Box */}
-              <div className="bg-white p-4 rounded-2xl border border-stone-200 flex flex-col items-center text-center space-y-3 shadow-xs">
+              <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-stone-200 flex flex-col items-center text-center space-y-3 shadow-xs">
                 <span className="text-xs font-heading font-bold text-stone-700 uppercase tracking-wider">
                   Or Scan QR Code with Any App:
                 </span>
-                <div className="p-3 bg-white rounded-xl shadow-xs border border-stone-200 inline-block">
+                <div className="p-2.5 sm:p-3 bg-white rounded-xl shadow-xs border border-stone-200 inline-block">
                   <QRCodeSVG
                     value={upiDeepLink}
-                    size={160}
+                    size={140}
                     level="H"
                     includeMargin={false}
                   />
@@ -153,7 +156,7 @@ export default function PaymentModal({
                   <span className="font-mono font-bold text-stone-900">{upiId}</span>
                   <button
                     onClick={handleCopyUpi}
-                    className="p-1 text-stone-400 hover:text-stone-900 cursor-pointer"
+                    className="p-1 text-stone-400 hover:text-stone-900 cursor-pointer active:scale-95"
                     title="Copy UPI ID"
                   >
                     {copiedUpi ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
@@ -168,15 +171,18 @@ export default function PaymentModal({
                 </label>
                 <input
                   type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  autoComplete="off"
                   placeholder="e.g. 423456789012"
                   value={utrInput}
                   onChange={(e) => setUtrInput(e.target.value)}
-                  className="w-full bg-white border border-stone-300 rounded-xl px-3.5 py-2.5 text-xs text-stone-900 focus:outline-none focus:border-[#8B1E1E] shadow-2xs"
+                  className="w-full bg-white border border-stone-300 rounded-xl px-3.5 py-2.5 text-sm sm:text-xs text-stone-900 focus:outline-none focus:border-[#8B1E1E] shadow-2xs font-mono"
                 />
                 <button
                   type="button"
                   onClick={handleConfirmDone}
-                  className="w-full py-3.5 px-4 rounded-xl font-heading font-bold text-sm bg-emerald-600 hover:bg-emerald-700 text-white shadow-md flex items-center justify-center gap-2 transition cursor-pointer"
+                  className="w-full py-3.5 px-4 rounded-xl font-heading font-bold text-sm bg-emerald-600 hover:bg-emerald-700 text-white shadow-md flex items-center justify-center gap-2 transition cursor-pointer active:scale-98"
                 >
                   <CheckCircle2 className="w-4 h-4" />
                   <span>I Have Completed Payment</span>

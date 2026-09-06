@@ -19,6 +19,11 @@ export default function HomePage() {
   );
 
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
   const { itemCount, grandTotal, setIsCartOpen } = useCart();
 
   const chickenProducts = products.filter((p) => p.category === 'chicken');
@@ -31,53 +36,53 @@ export default function HomePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#F4F1EA] text-[#1F1A17] flex flex-col font-sans pb-24 sm:pb-0">
+    <div className="min-h-screen bg-[#F4F1EA] text-[#1F1A17] flex flex-col font-sans">
       <Header />
       
       <Hero />
 
       {/* Trust & Quality Bar */}
-      <section className="bg-[#FAF8F5] border-y border-stone-200/80 py-6">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+      <section className="bg-[#FAF8F5] border-y border-stone-200/80 py-4 sm:py-6">
+        <div className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 sm:gap-6">
             
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-[#7C1818]/10 text-[#7C1818] flex items-center justify-center shrink-0">
-                <ShieldCheck className="w-5 h-5" />
+            <div className="flex items-center gap-2.5 sm:gap-3 p-2 sm:p-0">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-[#7C1818]/10 text-[#7C1818] flex items-center justify-center shrink-0">
+                <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
               <div>
-                <div className="font-heading font-bold text-xs sm:text-sm text-stone-900">100% Halal Cuts</div>
-                <div className="text-[11px] text-stone-500">Strict hygienic slaughter</div>
+                <div className="font-heading font-bold text-xs sm:text-sm text-stone-900 leading-snug">100% Halal Cuts</div>
+                <div className="text-[10px] sm:text-[11px] text-stone-500">Strict hygienic slaughter</div>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-amber-100/80 text-amber-800 flex items-center justify-center shrink-0">
-                <Clock className="w-5 h-5" />
+            <div className="flex items-center gap-2.5 sm:gap-3 p-2 sm:p-0">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-amber-100/80 text-amber-800 flex items-center justify-center shrink-0">
+                <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
               <div>
-                <div className="font-heading font-bold text-xs sm:text-sm text-stone-900">Never Frozen</div>
-                <div className="text-[11px] text-stone-500">Live cut upon order</div>
+                <div className="font-heading font-bold text-xs sm:text-sm text-stone-900 leading-snug">Never Frozen</div>
+                <div className="text-[10px] sm:text-[11px] text-stone-500">Live cut upon order</div>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-emerald-100/80 text-emerald-800 flex items-center justify-center shrink-0">
-                <Truck className="w-5 h-5" />
+            <div className="flex items-center gap-2.5 sm:gap-3 p-2 sm:p-0">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-emerald-100/80 text-emerald-800 flex items-center justify-center shrink-0">
+                <Truck className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
               <div>
-                <div className="font-heading font-bold text-xs sm:text-sm text-stone-900">30–45 Mins Express</div>
-                <div className="text-[11px] text-stone-500">Direct Vijayawada delivery</div>
+                <div className="font-heading font-bold text-xs sm:text-sm text-stone-900 leading-snug">30–45 Mins Express</div>
+                <div className="text-[10px] sm:text-[11px] text-stone-500">Direct Vijayawada delivery</div>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-stone-200/80 text-stone-800 flex items-center justify-center shrink-0">
-                <Award className="w-5 h-5" />
+            <div className="flex items-center gap-2.5 sm:gap-3 p-2 sm:p-0">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-stone-200/80 text-stone-800 flex items-center justify-center shrink-0">
+                <Award className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
               <div>
-                <div className="font-heading font-bold text-xs sm:text-sm text-stone-900">Direct Zero-Fee UPI</div>
-                <div className="text-[11px] text-stone-500">Google Pay, PhonePe, or Cash</div>
+                <div className="font-heading font-bold text-xs sm:text-sm text-stone-900 leading-snug">Direct Zero-Fee UPI</div>
+                <div className="text-[10px] sm:text-[11px] text-stone-500">Google Pay, PhonePe, or Cash</div>
               </div>
             </div>
 
@@ -86,10 +91,10 @@ export default function HomePage() {
       </section>
 
       {/* Meat Cuts Showcase Section */}
-      <main id="catalog" className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 w-full space-y-12">
+      <main id="catalog" className="flex-1 max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-8 sm:py-16 w-full space-y-8 sm:space-y-12">
         
-        {/* Section Heading & Streamlined Category Bar (Custom Cut pill bar removed from here) */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-5 border-b border-stone-300/70 pb-6">
+        {/* Section Heading & Streamlined Category Bar */}
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 sm:gap-5 border-b border-stone-300/70 pb-5 sm:pb-6">
           <div>
             <span className="text-xs font-heading font-bold uppercase tracking-wider text-[#7C1818]">
               Daily Fresh Counter
@@ -102,11 +107,12 @@ export default function HomePage() {
             </p>
           </div>
 
-          {/* Clean "Choose From" Category Switcher */}
-          <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-[#FAF8F5] border border-stone-200/90 shadow-2xs self-start sm:self-auto overflow-x-auto">
-            <span className="text-xs font-heading font-bold text-stone-500 uppercase tracking-wider pl-2 pr-1 hidden md:inline">
-              Filter:
-            </span>
+          {/* Clean "Choose From" Category Switcher with Horizontal Scroll on Mobile */}
+          <div className="w-full sm:w-auto flex items-center gap-1.5 p-1 sm:p-1.5 rounded-2xl bg-[#FAF8F5] border border-stone-200/90 shadow-2xs overflow-x-auto no-scrollbar touch-pan-x">
+            <div className="flex items-center gap-1 pl-2.5 sm:pl-3 pr-1.5 py-1 text-stone-500 font-heading font-bold text-xs uppercase tracking-wider shrink-0">
+              <span>Filter</span>
+              <span className="text-stone-300">:</span>
+            </div>
             {categoryTabs.map((tab) => {
               const isActive = selectedCategory === tab.id;
               return (
@@ -114,10 +120,10 @@ export default function HomePage() {
                   key={tab.id}
                   type="button"
                   onClick={() => setSelectedCategory(tab.id)}
-                  className={`px-4 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-heading font-bold whitespace-nowrap transition-all cursor-pointer ${
+                  className={`px-3.5 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-heading font-bold whitespace-nowrap transition-all cursor-pointer shrink-0 active:scale-95 ${
                     isActive
                       ? 'bg-[#7C1818] text-white shadow-xs'
-                      : 'text-stone-700 hover:text-stone-950 hover:bg-stone-200/50'
+                      : 'text-stone-700 hover:text-stone-950 hover:bg-stone-200/60'
                   }`}
                 >
                   {tab.label}
@@ -209,23 +215,34 @@ export default function HomePage() {
 
       </main>
 
-      {/* Floating Mobile Cart Bar */}
-      {itemCount > 0 && (
-        <div className="sm:hidden fixed bottom-3 inset-x-3 z-40 bg-[#1F1A17] text-white p-3.5 rounded-2xl shadow-2xl border border-stone-800 flex items-center justify-between animate-in slide-in-from-bottom-2">
-          <div>
-            <div className="text-[11px] text-stone-300 font-medium">
-              {itemCount} {itemCount === 1 ? 'item' : 'items'} in basket
+      {/* Floating Mobile Cart Bar (Zomato/Licious-Grade Ergonomics) */}
+      {mounted && itemCount > 0 && (
+        <div className="sm:hidden fixed bottom-3 inset-x-3 z-40 bg-[#1F1A17]/95 backdrop-blur-md text-white px-4 py-3 rounded-2xl shadow-2xl border border-stone-700/80 flex items-center justify-between animate-in slide-in-from-bottom-3 duration-200">
+          <div 
+            onClick={() => setIsCartOpen(true)}
+            className="flex items-center gap-3 cursor-pointer"
+          >
+            <div className="relative w-9 h-9 rounded-xl bg-[#7C1818] flex items-center justify-center shrink-0 shadow-xs">
+              <span className="text-sm">🍗</span>
+              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-400 text-stone-950 text-[9px] font-black flex items-center justify-center">
+                {itemCount}
+              </span>
             </div>
-            <div className="text-lg font-heading font-black text-amber-300">
-              ₹{grandTotal}
+            <div>
+              <div className="text-[11px] text-stone-300 font-medium leading-tight">
+                {itemCount} {itemCount === 1 ? 'Cut' : 'Cuts'} Selected
+              </div>
+              <div className="text-base font-heading font-black text-amber-300 leading-tight">
+                ₹{grandTotal}
+              </div>
             </div>
           </div>
           <button
             onClick={() => setIsCartOpen(true)}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#7C1818] hover:bg-[#661212] text-white font-heading font-bold text-xs shadow-md active:scale-95 transition cursor-pointer"
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#7C1818] hover:bg-[#661212] text-white font-heading font-bold text-xs shadow-md active:scale-95 transition cursor-pointer"
           >
             <span>View Basket</span>
-            <ArrowRight className="w-4 h-4" />
+            <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
       )}

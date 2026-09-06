@@ -8,6 +8,9 @@ export interface UserProfile {
   id: string;
   phone: string;
   fullName?: string;
+  firstName?: string;
+  avatarUrl?: string;
+  email?: string;
   address?: string;
   area?: string;
   landmark?: string;
@@ -54,24 +57,56 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
-  const loadProfile = async (userId: string, phone: string) => {
-    if (!supabase) return;
-    try {
-      const { data } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
+  const loadProfile = async (authUser: User) => {
+    const userId = authUser.id;
+    const meta = authUser.user_metadata || {};
+    const googleName = meta.full_name || meta.name || '';
+    const googleAvatar = meta.avatar_url || meta.picture || '';
+    const googleEmail = authUser.email || meta.email || '';
+    const googleFirstName = meta.given_name || (googleName ? googleName.split(' ')[0] : '');
 
-      if (data) {
-        setProfile(data);
-      } else {
-        const newProf: UserProfile = { id: userId, phone };
-        await supabase.from('profiles').insert([newProf]);
-        setProfile(newProf);
+    let currentProfile: UserProfile = {
+      id: userId,
+      phone: authUser.phone || '',
+      fullName: googleName || 'Customer',
+      firstName: googleFirstName || (googleName ? googleName.split(' ')[0] : 'Customer'),
+      avatarUrl: googleAvatar,
+      email: googleEmail,
+    };
+
+    if (supabase) {
+      try {
+        const { data } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .single();
+
+        if (data) {
+          currentProfile = {
+            ...currentProfile,
+            ...data,
+            fullName: data.full_name || googleName || currentProfile.fullName,
+            firstName: data.full_name ? data.full_name.split(' ')[0] : googleFirstName || 'Customer',
+            avatarUrl: googleAvatar || data.avatar_url,
+          };
+        } else {
+          // Upsert initial profile into Supabase
+          const payload = {
+            id: userId,
+            phone: authUser.phone || '',
+            full_name: googleName || 'Customer',
+          };
+          await supabase.from('profiles').insert([payload]);
+        }
+      } catch {
+        // use derived currentProfile
       }
-    } catch {
-      setProfile({ id: userId, phone });
+    }
+
+    setProfile(currentProfile);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(currentProfile));
     }
   };
 
@@ -81,14 +116,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       supabase.auth.getSession().then(({ data: { session } }) => {
         if (session?.user) {
           setUser(session.user);
-          loadProfile(session.user.id, session.user.phone || '');
+          loadProfile(session.user);
         }
       });
 
       const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
         if (session?.user) {
           setUser(session.user);
-          loadProfile(session.user.id, session.user.phone || '');
+          loadProfile(session.user);
         } else {
           setUser(null);
           setProfile(null);
@@ -133,7 +168,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (error) return { success: false, error: error.message };
         if (data.user) {
           setUser(data.user);
-          await loadProfile(data.user.id, data.user.phone || cleanPhone);
+          await loadProfile(data.user);
         }
         return { success: true };
       } catch (err: unknown) {

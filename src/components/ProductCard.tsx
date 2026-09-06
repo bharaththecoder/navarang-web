@@ -67,11 +67,11 @@ export default function ProductCard({ product }: ProductCardProps) {
         </div>
 
         {/* Card Body */}
-        <div className="p-5 sm:p-6 space-y-4">
+        <div className="p-4 sm:p-6 space-y-3.5 sm:space-y-4">
           
           {/* Title and Telugu name */}
           <div>
-            <h3 className="font-heading font-black text-lg text-[#1F1A17] tracking-tight group-hover:text-[#7C1818] transition-colors">
+            <h3 className="font-heading font-black text-base sm:text-lg text-[#1F1A17] tracking-tight group-hover:text-[#7C1818] transition-colors">
               {product.name}
             </h3>
             {product.teluguName && (
@@ -79,9 +79,11 @@ export default function ProductCard({ product }: ProductCardProps) {
                 {product.teluguName}
               </p>
             )}
-            <p className="text-xs text-stone-600 line-clamp-2 mt-2 leading-relaxed">
-              {product.description}
-            </p>
+            {product.description && (
+              <p className="text-xs text-stone-600 line-clamp-2 mt-1.5 leading-relaxed">
+                {product.description}
+              </p>
+            )}
           </div>
 
           {/* Weight Chips Selector (250g, 500g, 1kg) - Exact Mockup Style */}
@@ -98,7 +100,7 @@ export default function ProductCard({ product }: ProductCardProps) {
                     key={w.label}
                     type="button"
                     onClick={() => setSelectedWeight(w)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-heading font-bold transition-all cursor-pointer ${
+                    className={`px-3 py-1.5 rounded-xl text-xs font-heading font-bold transition-all cursor-pointer active:scale-95 ${
                       isSelected
                         ? 'bg-stone-900 text-white shadow-xs'
                         : 'bg-white border border-stone-300 text-stone-700 hover:bg-stone-100'
@@ -121,7 +123,7 @@ export default function ProductCard({ product }: ProductCardProps) {
                 <button
                   type="button"
                   onClick={() => setSkinPreference('skinless')}
-                  className={`py-1.5 px-3 rounded-xl text-xs font-heading font-bold transition cursor-pointer ${
+                  className={`py-1.5 px-3 rounded-xl text-xs font-heading font-bold transition cursor-pointer active:scale-95 ${
                     skinPreference === 'skinless'
                       ? 'bg-[#7C1818] text-white shadow-xs'
                       : 'bg-white border border-stone-300 text-stone-700 hover:bg-stone-100'
@@ -132,7 +134,7 @@ export default function ProductCard({ product }: ProductCardProps) {
                 <button
                   type="button"
                   onClick={() => setSkinPreference('with-skin')}
-                  className={`py-1.5 px-3 rounded-xl text-xs font-heading font-bold transition cursor-pointer ${
+                  className={`py-1.5 px-3 rounded-xl text-xs font-heading font-bold transition cursor-pointer active:scale-95 ${
                     skinPreference === 'with-skin'
                       ? 'bg-[#7C1818] text-white shadow-xs'
                       : 'bg-white border border-stone-300 text-stone-700 hover:bg-stone-100'
@@ -146,8 +148,13 @@ export default function ProductCard({ product }: ProductCardProps) {
 
           {/* Cut Option Selector Pills */}
           <div className="space-y-1.5">
-            <div className="text-xs font-heading font-bold text-stone-700">
-              Cut Style
+            <div className="text-xs font-heading font-bold text-stone-700 flex items-center justify-between">
+              <span>Cut Style</span>
+              {selectedCut.priceModifier && selectedCut.priceModifier > 0 ? (
+                <span className="text-[11px] text-[#7C1818] font-bold">
+                  +₹{selectedCut.priceModifier}/kg
+                </span>
+              ) : null}
             </div>
             <div className="flex flex-wrap gap-1.5">
               {product.cuts.map((cut) => {
@@ -157,13 +164,18 @@ export default function ProductCard({ product }: ProductCardProps) {
                     key={cut.id}
                     type="button"
                     onClick={() => setSelectedCut(cut)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-heading font-bold transition-all cursor-pointer ${
+                    className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-heading font-bold transition-all cursor-pointer flex items-center gap-1 active:scale-95 ${
                       isSelected
                         ? 'bg-stone-900 text-white shadow-xs'
                         : 'bg-white border border-stone-300 text-stone-700 hover:bg-stone-100'
                     }`}
                   >
-                    {cut.name.split(' (')[0]}
+                    <span>{cut.name.split(' (')[0]}</span>
+                    {cut.priceModifier && cut.priceModifier > 0 ? (
+                      <span className={`text-[10px] ${isSelected ? 'text-amber-300' : 'text-[#7C1818]'}`}>
+                        +₹{cut.priceModifier}
+                      </span>
+                    ) : null}
                   </button>
                 );
               })}
@@ -174,11 +186,11 @@ export default function ProductCard({ product }: ProductCardProps) {
       </div>
 
       {/* Card Action Button (Full width deep wine red from mockup) */}
-      <div className="p-5 sm:p-6 pt-0">
+      <div className="p-4 sm:p-6 pt-0">
         <button
           type="button"
           onClick={handleAdd}
-          className={`w-full py-3.5 rounded-2xl font-heading font-bold text-xs sm:text-sm shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98 ${
+          className={`w-full py-3.5 rounded-2xl font-heading font-bold text-xs sm:text-sm shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 ${
             isAdded
               ? 'bg-emerald-700 text-white'
               : 'bg-[#7C1818] hover:bg-[#661212] text-white'

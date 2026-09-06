@@ -10,7 +10,7 @@ export interface Product {
   name: string;
   teluguName?: string;
   category: 'chicken' | 'mutton';
-  description: string;
+  description?: string;
   basePricePerKg: number; // Base rate in INR
   image: string;
   badge?: string;
@@ -54,6 +54,7 @@ export interface Order {
   orderStatus: 'New' | 'Cutting & Cleaning' | 'Out for Delivery' | 'Delivered' | 'Cancelled';
   upiRefNumber?: string;
   specialInstructions?: string;
+  googleMapsUrl?: string;
 }
 
 export const INITIAL_PRODUCTS: Product[] = [
@@ -62,10 +63,10 @@ export const INITIAL_PRODUCTS: Product[] = [
     name: 'Fresh Farm Broiler Chicken',
     teluguName: 'ఫ్రెష్ బ్రాయిలర్ చికెన్',
     category: 'chicken',
-    description: 'Freshly slaughtered farm broiler chicken cleaned hygienically. Tender, juicy, and ideal for authentic Andhra curries, fry, or biryani.',
+    // description: 'Freshly slaughtered farm broiler chicken cleaned hygienically. Tender, juicy, and ideal for authentic Andhra curries, fry, or biryani.',
     basePricePerKg: 240,
     image: 'https://images.unsplash.com/photo-1587593810167-a84920ea0781?auto=format&fit=crop&w=800&q=80',
-    badge: 'Daily Fresh Best Seller',
+    // badge: 'Daily Fresh Best Seller',
     availableWeights: [
       { label: '500 g', weightKg: 0.5 },
       { label: '1 kg', weightKg: 1.0 },
@@ -89,10 +90,10 @@ export const INITIAL_PRODUCTS: Product[] = [
     name: 'Fresh Chicken Liver & Gizzard',
     teluguName: 'ఫ్రెష్ చికెన్ లివర్ & గుండెకాయలు',
     category: 'chicken',
-    description: 'Fresh farm chicken liver and gizzard. Washed thoroughly with fresh water, highly nutrient-rich and tender for pepper fry.',
+    // description: 'Fresh farm chicken liver and gizzard. Washed thoroughly with fresh water, highly nutrient-rich and tender for pepper fry.',
     basePricePerKg: 200,
     image: 'https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?auto=format&fit=crop&w=800&q=80',
-    badge: 'High Protein Favorite',
+    // badge: 'High Protein Favorite',
     availableWeights: [
       { label: '250 g', weightKg: 0.25 },
       { label: '500 g', weightKg: 0.5 },
@@ -111,10 +112,10 @@ export const INITIAL_PRODUCTS: Product[] = [
     name: 'Tender Goat Mutton (Premium)',
     teluguName: 'లేత మేక మటన్',
     category: 'mutton',
-    description: 'Fresh, 100% tender local goat meat selected daily. Rich in taste, soft texture, ideal for Pulao and Rayalaseema/Andhra Mutton Kura.',
+    // description: 'Fresh, 100% tender local goat meat selected daily. Rich in taste, soft texture, ideal for Pulao and Rayalaseema/Andhra Mutton Kura.',
     basePricePerKg: 850,
     image: '/fresh-mutton.jpg',
-    badge: '100% Tender Goat',
+    // badge: '100% Tender Goat',
     availableWeights: [
       { label: '250 g', weightKg: 0.25 },
       { label: '500 g', weightKg: 0.5 },
@@ -136,10 +137,10 @@ export const INITIAL_PRODUCTS: Product[] = [
     name: 'Mutton Liver & Paya (Kidney/Liver/Trottles)',
     teluguName: 'మేక లివర్ & పాయా',
     category: 'mutton',
-    description: 'Fresh goat liver, kidneys and cleaned bone trottles. Nutrient-dense, fresh off the morning slaughter.',
+    // description: 'Fresh goat liver, kidneys and cleaned bone trottles. Nutrient-dense, fresh off the morning slaughter.',
     basePricePerKg: 880,
     image: '/fresh-mutton-liver-paya.jpg',
-    badge: 'Fresh Morning Stock',
+    // badge: 'Fresh Morning Stock',
     availableWeights: [
       { label: '250 g', weightKg: 0.25 },
       { label: '500 g', weightKg: 0.5 },
@@ -156,7 +157,7 @@ export const INITIAL_PRODUCTS: Product[] = [
 ];
 
 export const VIJAYAWADA_AREAS = [
-  'Madhuranagar (Express 20-30 mins)',
+  'Madhuranagar',
   'Satyanarayanapuram',
   'Moghalrajpuram',
   'Labbipet / MG Road',
@@ -169,5 +170,4 @@ export const VIJAYAWADA_AREAS = [
   'Benz Circle',
   'Ramavarappadu',
   'One Town / Kaleswara Rao Market',
-  'Other Vijayawada Area',
 ];

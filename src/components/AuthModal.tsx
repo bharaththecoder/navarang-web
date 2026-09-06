@@ -22,15 +22,18 @@ export default function AuthModal() {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/60 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-stone-950/60 backdrop-blur-sm animate-in fade-in duration-200">
       <div 
-        className="relative w-full max-w-md bg-[#FDFCFB] rounded-3xl border border-stone-200/90 shadow-2xl p-6 sm:p-8 overflow-hidden"
+        className="relative w-full max-w-md bg-[#FDFCFB] rounded-t-3xl sm:rounded-3xl border-t sm:border border-stone-200/90 shadow-2xl p-6 sm:p-8 overflow-hidden pb-safe animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Mobile Drag Indicator */}
+        <div className="w-12 h-1 bg-stone-300 rounded-full mx-auto -mt-2 mb-4 sm:hidden shrink-0" />
+
         {/* Close Button */}
         <button
           onClick={() => setIsAuthModalOpen(false)}
-          className="absolute top-5 right-5 p-2 rounded-full text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors"
+          className="absolute top-5 right-5 p-2 rounded-full text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors cursor-pointer"
           aria-label="Close modal"
         >
           <X className="w-5 h-5" />

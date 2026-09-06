@@ -7,10 +7,18 @@ import { Product, Order } from '@/types';
 import {
   getStoreProducts,
   updateProductPrice,
+  updateProductCutModifier,
+  getStoreDeliverySettings,
+  updateStoreDeliverySettings,
+  StoreDeliverySettings,
   getOrders,
-  updateOrderStatus,
+  fetchOrdersFromDb,
+  updateOrderStatusInDb,
+  mapDbRowToOrder,
   generateWhatsAppOrderUrl,
 } from '@/lib/store';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 import {
   PackageCheck,
   RefreshCw,
@@ -21,6 +29,9 @@ import {
   Scissors,
   Store,
   Clock,
+  MapPin,
+  ExternalLink,
+  Truck,
 } from 'lucide-react';
 
 export default function AdminDashboardPage() {
@@ -35,29 +46,87 @@ export default function AdminDashboardPage() {
 
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [isLoadingOrders, setIsLoadingOrders] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
   const [editingPrices, setEditingPrices] = useState<Record<string, number>>({});
+  const [editingCutModifiers, setEditingCutModifiers] = useState<Record<string, number>>({});
+  const [deliverySettings, setDeliverySettings] = useState<StoreDeliverySettings>({
+    defaultDeliveryFee: 35,
+    freeDeliveryThreshold: 499,
+  });
   const [orderFilter, setOrderFilter] = useState<string>('all');
 
   const ADMIN_PIN = process.env.NEXT_PUBLIC_ADMIN_PIN || '1234';
   const ownerWhatsApp = process.env.NEXT_PUBLIC_OWNER_WHATSAPP || '917989493162';
 
-  const loadData = () => {
+  const loadData = async () => {
     const prods = getStoreProducts();
     setProducts(prods);
     const initialPriceMap: Record<string, number> = {};
+    const initialCutMap: Record<string, number> = {};
     prods.forEach((p) => {
       initialPriceMap[p.id] = p.basePricePerKg;
+      p.cuts.forEach((c) => {
+        initialCutMap[`${p.id}-${c.id}`] = c.priceModifier || 0;
+      });
     });
     setEditingPrices(initialPriceMap);
+    setEditingCutModifiers(initialCutMap);
+    setDeliverySettings(getStoreDeliverySettings());
 
-    const ords = getOrders();
-    setOrders(ords);
+    // Initial local cache
+    setOrders(getOrders());
+
+    // Fetch from Supabase
+    setIsLoadingOrders(true);
+    const freshOrders = await fetchOrdersFromDb();
+    setOrders(freshOrders);
+    setIsLoadingOrders(false);
   };
 
   useEffect(() => {
     if (isAuthenticated) {
-      loadData();
+      // Defer execution to avoid synchronous cascading render warning
+      const timer = setTimeout(() => {
+        loadData();
+      }, 0);
+
+      // Setup Supabase Realtime subscription for orders
+      let channel: RealtimeChannel | null = null;
+      if (isSupabaseConfigured && supabase) {
+        const client = supabase;
+        channel = client
+          .channel('admin_orders_realtime')
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'orders' },
+            (payload) => {
+              if (payload.eventType === 'INSERT') {
+                const newOrder = mapDbRowToOrder(payload.new);
+                setOrders((prev) => [newOrder, ...prev.filter((o) => o.id !== newOrder.id)]);
+                setStatusMessage(`🔔 New Order #${newOrder.id} received!`);
+                setTimeout(() => setStatusMessage(''), 4000);
+              } else if (payload.eventType === 'UPDATE') {
+                const updated = mapDbRowToOrder(payload.new);
+                setOrders((prev) =>
+                  prev.map((o) => (o.id === updated.id ? { ...o, ...updated } : o))
+                );
+              }
+            }
+          )
+          .subscribe();
+
+        return () => {
+          clearTimeout(timer);
+          if (channel) {
+            client.removeChannel(channel);
+          }
+        };
+      }
+
+      return () => {
+        clearTimeout(timer);
+      };
     }
   }, [isAuthenticated]);
 
@@ -76,9 +145,30 @@ export default function AdminDashboardPage() {
     if (newPrice && newPrice > 0) {
       const updated = updateProductPrice(productId, newPrice);
       setProducts(updated);
-      setStatusMessage(`Rate updated successfully.`);
+      setStatusMessage(`Base price updated successfully.`);
       setTimeout(() => setStatusMessage(''), 2500);
     }
+  };
+
+  const handleSaveCutModifier = (productId: string, cutId: string) => {
+    const key = `${productId}-${cutId}`;
+    const newModifier = editingCutModifiers[key];
+    if (newModifier !== undefined) {
+      const updated = updateProductCutModifier(productId, cutId, Number(newModifier));
+      setProducts(updated);
+      setStatusMessage(`Cut style price modifier updated.`);
+      setTimeout(() => setStatusMessage(''), 2500);
+    }
+  };
+
+  const handleSaveDeliverySettings = () => {
+    const updated = updateStoreDeliverySettings({
+      defaultDeliveryFee: Number(deliverySettings.defaultDeliveryFee),
+      freeDeliveryThreshold: Number(deliverySettings.freeDeliveryThreshold),
+    });
+    setDeliverySettings(updated);
+    setStatusMessage(`Delivery rates & free delivery threshold saved.`);
+    setTimeout(() => setStatusMessage(''), 2500);
   };
 
   const handleToggleStock = (productId: string, currentStock: boolean) => {
@@ -91,12 +181,12 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const handleUpdateOrderStatus = (
+  const handleUpdateOrderStatus = async (
     orderId: string,
     status: Order['orderStatus'],
     paymentStatus?: Order['paymentStatus']
   ) => {
-    const updated = updateOrderStatus(orderId, status, paymentStatus);
+    const updated = await updateOrderStatusInDb(orderId, status, paymentStatus);
     setOrders(updated);
   };
 
@@ -181,10 +271,11 @@ export default function AdminDashboardPage() {
         <div className="flex items-center gap-2 sm:gap-3">
           <button
             onClick={loadData}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white hover:bg-stone-100 border border-stone-200 text-stone-700 text-xs font-heading font-bold transition cursor-pointer"
+            disabled={isLoadingOrders}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white hover:bg-stone-100 border border-stone-200 text-stone-700 text-xs font-heading font-bold transition cursor-pointer disabled:opacity-60"
           >
-            <RefreshCw className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Refresh Data</span>
+            <RefreshCw className={`w-3.5 h-3.5 ${isLoadingOrders ? 'animate-spin text-[#7C1818]' : ''}`} />
+            <span className="hidden sm:inline">{isLoadingOrders ? 'Syncing...' : 'Refresh Data'}</span>
           </button>
           <button
             onClick={() => {
@@ -243,11 +334,11 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Tab Navigation Pill Bar */}
-        <div className="flex items-center justify-between border-b border-stone-300/70 pb-3">
-          <div className="inline-flex p-1 rounded-2xl bg-stone-200/70 border border-stone-300/70 gap-1">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-300/70 pb-3">
+          <div className="inline-flex p-1 rounded-2xl bg-stone-200/70 border border-stone-300/70 gap-1 overflow-x-auto no-scrollbar">
             <button
               onClick={() => setActiveTab('orders')}
-              className={`px-5 py-2 rounded-xl text-xs sm:text-sm font-heading font-bold transition cursor-pointer ${
+              className={`px-3.5 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-heading font-bold transition cursor-pointer whitespace-nowrap active:scale-95 ${
                 activeTab === 'orders'
                   ? 'bg-[#7C1818] text-white shadow-xs'
                   : 'text-stone-700 hover:text-stone-950'
@@ -257,7 +348,7 @@ export default function AdminDashboardPage() {
             </button>
             <button
               onClick={() => setActiveTab('prices')}
-              className={`px-5 py-2 rounded-xl text-xs sm:text-sm font-heading font-bold transition cursor-pointer ${
+              className={`px-3.5 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-heading font-bold transition cursor-pointer whitespace-nowrap active:scale-95 ${
                 activeTab === 'prices'
                   ? 'bg-[#7C1818] text-white shadow-xs'
                   : 'text-stone-700 hover:text-stone-950'
@@ -268,27 +359,27 @@ export default function AdminDashboardPage() {
           </div>
 
           {activeTab === 'orders' && (
-            <div className="hidden sm:flex items-center gap-1 text-xs">
+            <div className="flex items-center gap-1.5 text-xs overflow-x-auto no-scrollbar">
               <button
                 onClick={() => setOrderFilter('all')}
-                className={`px-3 py-1.5 rounded-full font-bold transition ${
-                  orderFilter === 'all' ? 'bg-stone-900 text-white' : 'bg-white text-stone-600 border border-stone-200'
+                className={`px-3 py-1.5 rounded-full font-bold transition cursor-pointer active:scale-95 ${
+                  orderFilter === 'all' ? 'bg-stone-900 text-white' : 'bg-white text-stone-600 border border-stone-200 hover:bg-stone-100'
                 }`}
               >
                 All
               </button>
               <button
                 onClick={() => setOrderFilter('pending')}
-                className={`px-3 py-1.5 rounded-full font-bold transition ${
-                  orderFilter === 'pending' ? 'bg-stone-900 text-white' : 'bg-white text-stone-600 border border-stone-200'
+                className={`px-3 py-1.5 rounded-full font-bold transition cursor-pointer active:scale-95 ${
+                  orderFilter === 'pending' ? 'bg-stone-900 text-white' : 'bg-white text-stone-600 border border-stone-200 hover:bg-stone-100'
                 }`}
               >
                 Active Only
               </button>
               <button
                 onClick={() => setOrderFilter('delivered')}
-                className={`px-3 py-1.5 rounded-full font-bold transition ${
-                  orderFilter === 'delivered' ? 'bg-stone-900 text-white' : 'bg-white text-stone-600 border border-stone-200'
+                className={`px-3 py-1.5 rounded-full font-bold transition cursor-pointer active:scale-95 ${
+                  orderFilter === 'delivered' ? 'bg-stone-900 text-white' : 'bg-white text-stone-600 border border-stone-200 hover:bg-stone-100'
                 }`}
               >
                 Completed
@@ -299,9 +390,79 @@ export default function AdminDashboardPage() {
 
         {/* TAB 1: DAILY PRICE & STOCK MANAGER */}
         {activeTab === 'prices' && (
-          <div className="space-y-4">
-            <div className="bg-[#FAF8F5] p-4.5 rounded-3xl border border-stone-200/90 text-xs text-stone-600 shadow-2xs">
-              <strong className="text-stone-900 font-heading">Market Rate Guide:</strong> Type today&apos;s Vijayawada rate per kg for farm chicken and fresh goat mutton below and tap <strong>&quot;Update Rate&quot;</strong>. The storefront recalculates all cut weights automatically.
+          <div className="space-y-6">
+            {/* Store Delivery & Minimum Order Settings Card */}
+            <div className="bg-[#FAF8F5] p-5 sm:p-6 rounded-3xl border border-stone-200/90 shadow-culinary space-y-4">
+              <div className="flex items-center gap-3 border-b border-stone-200/80 pb-3">
+                <div className="w-10 h-10 rounded-2xl bg-[#7C1818]/10 text-[#7C1818] flex items-center justify-center">
+                  <Truck className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-heading font-black text-stone-900 text-base">
+                    Vijayawada Delivery Charges &amp; Free Delivery Threshold
+                  </h3>
+                  <p className="text-xs text-stone-500">
+                    Control doorstep delivery fee across Madhuranagar &amp; Vijayawada
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-1">
+                <div className="bg-white p-4 rounded-2xl border border-stone-200 space-y-1.5">
+                  <label className="text-xs font-heading font-bold text-stone-700 block">
+                    Standard Delivery Fee (₹)
+                  </label>
+                  <p className="text-[11px] text-stone-500">
+                    Charged on orders below the free threshold
+                  </p>
+                  <input
+                    type="number"
+                    value={deliverySettings.defaultDeliveryFee}
+                    onChange={(e) =>
+                      setDeliverySettings({
+                        ...deliverySettings,
+                        defaultDeliveryFee: Number(e.target.value),
+                      })
+                    }
+                    className="w-full mt-2 bg-stone-50 border border-stone-300 rounded-xl px-3.5 py-2 text-sm font-heading font-bold text-stone-900 focus:outline-none focus:border-[#7C1818]"
+                  />
+                </div>
+
+                <div className="bg-white p-4 rounded-2xl border border-stone-200 space-y-1.5">
+                  <label className="text-xs font-heading font-bold text-stone-700 block">
+                    Free Delivery Threshold (₹)
+                  </label>
+                  <p className="text-[11px] text-stone-500">
+                    Orders at or above this amount get FREE delivery
+                  </p>
+                  <input
+                    type="number"
+                    value={deliverySettings.freeDeliveryThreshold}
+                    onChange={(e) =>
+                      setDeliverySettings({
+                        ...deliverySettings,
+                        freeDeliveryThreshold: Number(e.target.value),
+                      })
+                    }
+                    className="w-full mt-2 bg-stone-50 border border-stone-300 rounded-xl px-3.5 py-2 text-sm font-heading font-bold text-stone-900 focus:outline-none focus:border-[#7C1818]"
+                  />
+                </div>
+
+                <div className="flex items-end">
+                  <button
+                    type="button"
+                    onClick={handleSaveDeliverySettings}
+                    className="w-full py-3.5 px-4 rounded-2xl bg-[#7C1818] hover:bg-[#661212] text-white font-heading font-bold text-xs shadow-xs transition flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    <span>Save Delivery Settings</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-[#FAF8F5] p-4 rounded-2xl border border-stone-200/90 text-xs text-stone-600 shadow-2xs">
+              <strong className="text-stone-900 font-heading">Pricing &amp; Cut Rates Guide:</strong> Edit base rate per kg or individual cut preparation modifiers (e.g. Boneless, Biryani Cut, Keema). All modifications immediately reflect on the live customer catalog and basket!
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -310,72 +471,119 @@ export default function AdminDashboardPage() {
                   key={product.id}
                   className="bg-[#FAF8F5] border border-stone-200/90 rounded-3xl p-5 space-y-4 shadow-culinary flex flex-col justify-between"
                 >
-                  <div className="flex gap-4">
-                    <div className="relative w-20 h-20 rounded-2xl overflow-hidden bg-stone-100 shrink-0 border border-stone-200">
-                      <Image
-                        src={product.image}
-                        alt={product.name}
-                        fill
-                        sizes="80px"
-                        className="object-cover"
-                      />
-                    </div>
-                    <div>
-                      <h3 className="font-heading font-bold text-stone-900 text-sm sm:text-base">
-                        {product.name}
-                      </h3>
-                      {product.teluguName && (
-                        <p className="text-xs font-semibold text-[#7C1818] mt-0.5">{product.teluguName}</p>
-                      )}
-                      <span className="text-[11px] text-stone-500 capitalize block mt-1">
-                        Category: <strong className="text-stone-700">{product.category}</strong>
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="pt-3 border-t border-stone-200/80 space-y-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <label className="text-[10px] font-heading font-bold text-stone-500 uppercase tracking-wider">
-                          Rate per {product.unit} (₹):
-                        </label>
-                        <div className="flex items-center gap-2 mt-1">
-                          <input
-                            type="number"
-                            value={editingPrices[product.id] ?? product.basePricePerKg}
-                            onChange={(e) =>
-                              setEditingPrices({
-                                ...editingPrices,
-                                [product.id]: Number(e.target.value),
-                              })
-                            }
-                            className="w-24 bg-white border border-stone-300 rounded-xl px-3 py-1.5 text-sm font-heading font-bold text-stone-900 focus:outline-none focus:border-[#7C1818]"
-                          />
+                  <div>
+                    <div className="flex gap-4">
+                      <div className="relative w-20 h-20 rounded-2xl overflow-hidden bg-stone-100 shrink-0 border border-stone-200">
+                        <Image
+                          src={product.image}
+                          alt={product.name}
+                          fill
+                          sizes="80px"
+                          className="object-cover"
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <h3 className="font-heading font-bold text-stone-900 text-sm sm:text-base truncate">
+                            {product.name}
+                          </h3>
                           <button
                             type="button"
-                            onClick={() => handleSavePrice(product.id)}
-                            className="px-3.5 py-2 rounded-xl bg-[#7C1818] hover:bg-[#661212] text-white font-heading font-bold text-xs transition cursor-pointer"
+                            onClick={() => handleToggleStock(product.id, product.inStock)}
+                            className={`px-2.5 py-1 rounded-lg text-[10px] font-heading font-bold border transition cursor-pointer shrink-0 ${
+                              product.inStock
+                                ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
+                                : 'bg-red-50 border-red-300 text-red-800'
+                            }`}
                           >
-                            Update
+                            {product.inStock ? 'In Stock' : 'Sold Out'}
                           </button>
                         </div>
+                        {product.teluguName && (
+                          <p className="text-xs font-semibold text-[#7C1818] mt-0.5">{product.teluguName}</p>
+                        )}
+                        <span className="text-[11px] text-stone-500 capitalize block mt-1">
+                          Category: <strong className="text-stone-700">{product.category}</strong>
+                        </span>
                       </div>
+                    </div>
 
-                      <div className="text-right">
-                        <label className="text-[10px] font-heading font-bold text-stone-500 uppercase tracking-wider block mb-1">
-                          Counter Stock:
-                        </label>
+                    {/* Base Price Editor */}
+                    <div className="mt-4 pt-3 border-t border-stone-200/80">
+                      <label className="text-[10px] font-heading font-bold text-stone-500 uppercase tracking-wider block">
+                        Base Rate per {product.unit} (₹):
+                      </label>
+                      <div className="flex items-center gap-2 mt-1.5">
+                        <input
+                          type="number"
+                          value={editingPrices[product.id] ?? product.basePricePerKg}
+                          onChange={(e) =>
+                            setEditingPrices({
+                              ...editingPrices,
+                              [product.id]: Number(e.target.value),
+                            })
+                          }
+                          className="w-28 bg-white border border-stone-300 rounded-xl px-3 py-2 text-sm font-heading font-bold text-stone-900 focus:outline-none focus:border-[#7C1818]"
+                        />
                         <button
                           type="button"
-                          onClick={() => handleToggleStock(product.id, product.inStock)}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-heading font-bold border transition cursor-pointer ${
-                            product.inStock
-                              ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
-                              : 'bg-red-50 border-red-300 text-red-800'
-                          }`}
+                          onClick={() => handleSavePrice(product.id)}
+                          className="px-4 py-2 rounded-xl bg-[#7C1818] hover:bg-[#661212] text-white font-heading font-bold text-xs transition cursor-pointer"
                         >
-                          {product.inStock ? 'Available' : 'Sold Out'}
+                          Update Base
                         </button>
+                      </div>
+                    </div>
+
+                    {/* Cut Style Pricing Modifiers */}
+                    <div className="mt-4 pt-3 border-t border-stone-200/80 space-y-2">
+                      <div className="flex items-center gap-1.5 text-[11px] font-heading font-bold text-stone-800 uppercase tracking-wider">
+                        <Scissors className="w-3.5 h-3.5 text-[#7C1818]" />
+                        <span>Cut Style Price Modifiers (₹ / kg)</span>
+                      </div>
+                      <div className="space-y-2">
+                        {product.cuts.map((cut) => {
+                          const cutKey = `${product.id}-${cut.id}`;
+                          const currentModifier = editingCutModifiers[cutKey] ?? (cut.priceModifier || 0);
+
+                          return (
+                            <div
+                              key={cut.id}
+                              className="flex items-center justify-between gap-2 p-2 rounded-xl bg-white border border-stone-200/80 text-xs"
+                            >
+                              <div className="min-w-0 flex-1">
+                                <span className="font-heading font-bold text-stone-900 block truncate">
+                                  {cut.name}
+                                </span>
+                                <span className="text-[10px] text-stone-400 truncate block">
+                                  {cut.description || 'Standard cut style'}
+                                </span>
+                              </div>
+
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <span className="text-[11px] text-stone-500 font-bold">+₹</span>
+                                <input
+                                  type="number"
+                                  value={currentModifier}
+                                  onChange={(e) =>
+                                    setEditingCutModifiers({
+                                      ...editingCutModifiers,
+                                      [cutKey]: Number(e.target.value),
+                                    })
+                                  }
+                                  className="w-16 bg-stone-50 border border-stone-300 rounded-lg px-2 py-1 text-xs font-bold text-stone-900 text-center focus:outline-none focus:border-[#7C1818]"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => handleSaveCutModifier(product.id, cut.id)}
+                                  className="px-2.5 py-1 rounded-lg bg-stone-900 hover:bg-black text-white font-bold text-[11px] transition cursor-pointer"
+                                >
+                                  Save
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   </div>
@@ -464,6 +672,20 @@ export default function AdminDashboardPage() {
                           <div className="text-stone-600">
                             {order.address}{order.landmark ? ` (Near ${order.landmark})` : ''}
                           </div>
+                          {order.googleMapsUrl && (
+                            <div className="pt-1">
+                              <a
+                                href={order.googleMapsUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 font-heading font-bold text-[11px] border border-blue-200 transition"
+                              >
+                                <MapPin className="w-3.5 h-3.5 text-red-500" />
+                                <span>Open Delivery GPS Map</span>
+                                <ExternalLink className="w-3 h-3 text-blue-500" />
+                              </a>
+                            </div>
+                          )}
                           {order.specialInstructions && (
                             <div className="text-[#7C1818] bg-red-50 p-2 rounded-xl border border-red-100 mt-1">
                               <strong>Butcher Note:</strong> {order.specialInstructions}

@@ -3,6 +3,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { CartItem, Product, CutOption } from '@/types';
 
+import { getStoreDeliverySettings, subscribeToDeliverySettings, StoreDeliverySettings } from '@/lib/store';
+
 interface CartContextType {
   items: CartItem[];
   addToCart: (product: Product, weightKg: number, weightLabel: string, cut: CutOption, skin?: 'with-skin' | 'skinless') => void;
@@ -15,6 +17,7 @@ interface CartContextType {
   grandTotal: number;
   isCartOpen: boolean;
   setIsCartOpen: (open: boolean) => void;
+  deliverySettings: StoreDeliverySettings;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -30,6 +33,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   });
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [deliverySettings, setDeliverySettings] = useState<StoreDeliverySettings>(getStoreDeliverySettings);
+
+  useEffect(() => {
+    return subscribeToDeliverySettings(() => {
+      setDeliverySettings(getStoreDeliverySettings());
+    });
+  }, []);
 
   useEffect(() => {
     try {
@@ -103,8 +113,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   };
 
   const cartTotal = items.reduce((sum, item) => sum + item.totalPrice, 0);
-  // Free delivery for orders above ₹499 or in Madhuranagar
-  const deliveryFee = cartTotal >= 499 || cartTotal === 0 ? 0 : 35;
+  const deliveryFee =
+    cartTotal >= deliverySettings.freeDeliveryThreshold || cartTotal === 0
+      ? 0
+      : deliverySettings.defaultDeliveryFee;
   const grandTotal = cartTotal + deliveryFee;
   const itemCount = items.length;
 
@@ -122,6 +134,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         grandTotal,
         isCartOpen,
         setIsCartOpen,
+        deliverySettings,
       }}
     >
       {children}

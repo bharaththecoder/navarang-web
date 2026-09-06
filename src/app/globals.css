@@ -59,3 +59,16 @@ h1, h2, h3, h4, .font-heading {
 ::-webkit-scrollbar-thumb:hover {
   background: #A69E8F;
 }
+
+/* Mobile-friendly utility classes */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.pb-safe {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
