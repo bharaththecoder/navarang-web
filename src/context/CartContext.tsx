@@ -3,7 +3,13 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { CartItem, Product, CutOption } from '@/types';
 
-import { getStoreDeliverySettings, subscribeToDeliverySettings, StoreDeliverySettings } from '@/lib/store';
+import { 
+  getStoreDeliverySettings, 
+  subscribeToDeliverySettings, 
+  fetchDeliverySettingsFromDb,
+  StoreDeliverySettings 
+} from '@/lib/store';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
 interface CartContextType {
   items: CartItem[];
@@ -36,9 +42,39 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [deliverySettings, setDeliverySettings] = useState<StoreDeliverySettings>(getStoreDeliverySettings);
 
   useEffect(() => {
-    return subscribeToDeliverySettings(() => {
+    // Initial fetch from Supabase
+    fetchDeliverySettingsFromDb().then((fetched) => {
+      if (fetched) setDeliverySettings(fetched);
+    });
+
+    const unsubscribeLocal = subscribeToDeliverySettings(() => {
       setDeliverySettings(getStoreDeliverySettings());
     });
+
+    // Realtime subscription for delivery settings
+    if (isSupabaseConfigured && supabase) {
+      const channel = supabase
+        .channel('realtime_delivery_settings')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'store_settings', filter: 'id=eq.delivery_settings' },
+          () => {
+            fetchDeliverySettingsFromDb().then((fetched) => {
+              if (fetched) setDeliverySettings(fetched);
+            });
+          }
+        )
+        .subscribe();
+
+      return () => {
+        unsubscribeLocal();
+        supabase?.removeChannel(channel);
+      };
+    }
+
+    return () => {
+      unsubscribeLocal();
+    };
   }, []);
 
   useEffect(() => {

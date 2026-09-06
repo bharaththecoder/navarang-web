@@ -7,7 +7,8 @@ import ProductCard from '@/components/ProductCard';
 import CartDrawer from '@/components/CartDrawer';
 import Footer from '@/components/Footer';
 import { INITIAL_PRODUCTS } from '@/types';
-import { getStoreProducts, subscribeToStoreProducts } from '@/lib/store';
+import { getStoreProducts, subscribeToStoreProducts, fetchProductsFromDb } from '@/lib/store';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { useCart } from '@/context/CartContext';
 import { ShieldCheck, Clock, Truck, Award, ArrowRight } from 'lucide-react';
 
@@ -17,6 +18,28 @@ export default function HomePage() {
     getStoreProducts,
     () => INITIAL_PRODUCTS
   );
+
+  // Sync latest products from Supabase on mount and listen to realtime price changes
+  React.useEffect(() => {
+    fetchProductsFromDb();
+
+    if (isSupabaseConfigured && supabase) {
+      const channel = supabase
+        .channel('realtime_store_settings_home')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'store_settings', filter: 'id=eq.products' },
+          () => {
+            fetchProductsFromDb();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase?.removeChannel(channel);
+      };
+    }
+  }, []);
 
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const mounted = useSyncExternalStore(

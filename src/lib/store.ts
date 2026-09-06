@@ -97,6 +97,48 @@ export const saveStoreProducts = (products: Product[]) => {
   window.dispatchEvent(new Event('navarang_products_updated'));
 };
 
+// Sync products to Supabase cloud table `store_settings` under id 'products'
+export const syncProductsToDb = async (products: Product[]) => {
+  saveStoreProducts(products);
+  if (isSupabaseConfigured && supabase) {
+    try {
+      await supabase
+        .from('store_settings')
+        .upsert([{ id: 'products', data: products, updated_at: new Date().toISOString() }], { onConflict: 'id' });
+    } catch (err) {
+      console.warn('Notice: Could not sync products to Supabase store_settings table:', err);
+    }
+  }
+};
+
+// Fetch latest products from Supabase (called on app startup and realtime event)
+export const fetchProductsFromDb = async (): Promise<Product[]> => {
+  const local = getStoreProducts();
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('store_settings')
+        .select('data')
+        .eq('id', 'products')
+        .maybeSingle();
+
+      if (!error && data?.data && Array.isArray(data.data)) {
+        const remoteProducts = data.data as Product[];
+        // Re-attach static local images if remote data has relative images
+        const merged = remoteProducts.map((p) => {
+          const init = INITIAL_PRODUCTS.find((item) => item.id === p.id);
+          return init ? { ...p, image: init.image } : p;
+        });
+        saveStoreProducts(merged);
+        return merged;
+      }
+    } catch {
+      // Fall back to local products
+    }
+  }
+  return local;
+};
+
 export const subscribeToStoreProducts = (callback: () => void) => {
   if (typeof window === 'undefined') return () => {};
   window.addEventListener('navarang_products_updated', callback);
@@ -119,7 +161,7 @@ export const updateProductPrice = (productId: string, newBasePrice: number, inSt
     }
     return p;
   });
-  saveStoreProducts(updated);
+  syncProductsToDb(updated);
   return updated;
 };
 
@@ -147,7 +189,7 @@ export const updateProductCutModifier = (
     }
     return p;
   });
-  saveStoreProducts(updated);
+  syncProductsToDb(updated);
   return updated;
 };
 
@@ -174,6 +216,48 @@ export const getStoreDeliverySettings = (): StoreDeliverySettings => {
   }
 };
 
+export const saveStoreDeliverySettings = (settings: StoreDeliverySettings) => {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(DELIVERY_SETTINGS_KEY, JSON.stringify(settings));
+  window.dispatchEvent(new Event('navarang_delivery_settings_updated'));
+};
+
+// Sync delivery settings to Supabase
+export const syncDeliverySettingsToDb = async (settings: StoreDeliverySettings) => {
+  saveStoreDeliverySettings(settings);
+  if (isSupabaseConfigured && supabase) {
+    try {
+      await supabase
+        .from('store_settings')
+        .upsert([{ id: 'delivery_settings', data: settings, updated_at: new Date().toISOString() }], { onConflict: 'id' });
+    } catch (err) {
+      console.warn('Notice: Could not sync delivery settings to Supabase:', err);
+    }
+  }
+};
+
+export const fetchDeliverySettingsFromDb = async (): Promise<StoreDeliverySettings> => {
+  const local = getStoreDeliverySettings();
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('store_settings')
+        .select('data')
+        .eq('id', 'delivery_settings')
+        .maybeSingle();
+
+      if (!error && data?.data) {
+        const remoteSettings = data.data as StoreDeliverySettings;
+        saveStoreDeliverySettings(remoteSettings);
+        return remoteSettings;
+      }
+    } catch {
+      // Fall back to local
+    }
+  }
+  return local;
+};
+
 export const updateStoreDeliverySettings = (settings: Partial<StoreDeliverySettings>) => {
   if (typeof window === 'undefined') return DEFAULT_DELIVERY_SETTINGS;
   const current = getStoreDeliverySettings();
@@ -181,8 +265,7 @@ export const updateStoreDeliverySettings = (settings: Partial<StoreDeliverySetti
     ...current,
     ...settings,
   };
-  localStorage.setItem(DELIVERY_SETTINGS_KEY, JSON.stringify(updated));
-  window.dispatchEvent(new Event('navarang_delivery_settings_updated'));
+  syncDeliverySettingsToDb(updated);
   return updated;
 };
 

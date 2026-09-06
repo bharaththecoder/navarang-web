@@ -6,9 +6,11 @@ import Image from 'next/image';
 import { Product, Order } from '@/types';
 import {
   getStoreProducts,
+  fetchProductsFromDb,
   updateProductPrice,
   updateProductCutModifier,
   getStoreDeliverySettings,
+  fetchDeliverySettingsFromDb,
   updateStoreDeliverySettings,
   StoreDeliverySettings,
   getOrders,
@@ -59,8 +61,8 @@ export default function AdminDashboardPage() {
   const ADMIN_PIN = process.env.NEXT_PUBLIC_ADMIN_PIN || '1234';
   const ownerWhatsApp = process.env.NEXT_PUBLIC_OWNER_WHATSAPP || '917989493162';
 
-  const loadData = async () => {
-    const prods = getStoreProducts();
+  const loadData = async () => {    // Load current products and delivery rates (from local or cloud)
+    const prods = await fetchProductsFromDb();
     setProducts(prods);
     const initialPriceMap: Record<string, number> = {};
     const initialCutMap: Record<string, number> = {};
@@ -72,7 +74,9 @@ export default function AdminDashboardPage() {
     });
     setEditingPrices(initialPriceMap);
     setEditingCutModifiers(initialCutMap);
-    setDeliverySettings(getStoreDeliverySettings());
+    
+    const freshDeliverySettings = await fetchDeliverySettingsFromDb();
+    setDeliverySettings(freshDeliverySettings);
 
     // Initial local cache
     setOrders(getOrders());
